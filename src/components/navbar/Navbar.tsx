@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useMediaQuery } from 'react-responsive'
 import { Menu, X } from 'lucide-react'
+import { navVariants } from '../../utils/motion';
+
 
 const navItems = ['Home', 'Trainer', 'Membership', 'Sessions', 'Contact Us']
 
@@ -17,12 +19,12 @@ export default function Navbar() {
 
   return (
     <motion.nav
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 , backdropFilter: "blur(40px)",}}
-      transition={{ duration: 1.5 }}
-      className=" rounded-lg shadow-md"
-    >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 shadow-lg shadow-neutral-500 rounded-xl">
+    variants={navVariants}
+    initial="hidden"
+    whileInView="show"
+    className={` py-1 relative`}
+  >
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 shadow-lg shadow-neutral-700 rounded-xl ">
         <div className="flex items-center justify-between h-16 ">
           <div className="flex items-center ">
             <a href="#" className="text-gray-300 text-xl font-semibold">

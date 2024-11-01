@@ -37,6 +37,8 @@ import { cn } from "@/lib/utils";
 import HeroSection from "./HeroSection";
 import DashboardContent from "./DashboardContent";
 import ProfileContent from "./ProfileContent";
+import PaymentContent from "./PaymentContent";
+import FitnessPlansContent from "./FitnessPlansContent";
 
 export function SidebarDemo() {
   const links = [
@@ -71,7 +73,7 @@ export function SidebarDemo() {
   ];
   const [open, setOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(true);
-  const [currentView, setCurrentView] = useState('dashboard');
+  const [currentView, setCurrentView] = useState('home');
 
   const link = isLoggedIn
     ? {
@@ -104,6 +106,10 @@ export function SidebarDemo() {
         return <DashboardContent />;
       case 'profile':
         return <ProfileContent />;
+      case 'payment':
+        return <PaymentContent />;
+      case 'fitnessPlans':
+        return <FitnessPlansContent />;
       case 'home':
         return <HeroSection />;
     }
@@ -146,15 +152,16 @@ export function SidebarDemo() {
               <SidebarLink
                 link={
                   {
-                    label: "Payments",
+                    label: "Fitness Plans & Payments",
                     href: "#",
                     icon: (
                       <IconCreditCard className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" />
                     ),
+                    onClick: () => setCurrentView('payment'),
                   }
                 }
               />
-              <SidebarLink
+              {/* <SidebarLink
                 link={
                   {
                     label: "Fitness Plans",
@@ -162,9 +169,10 @@ export function SidebarDemo() {
                     icon: (
                       <IconClipboardCheck className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" />
                     ),
+                    onClick: () => setCurrentView('fitnessPlans'),
                   }
                 }
-              />
+              /> */}
               <SidebarLink
                 link={
                   {
@@ -173,6 +181,7 @@ export function SidebarDemo() {
                     icon: (
                       <IconBell className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" />
                     ),
+                    onClick: () => setCurrentView('notification'),
                   }
                 }
               />
@@ -184,6 +193,7 @@ export function SidebarDemo() {
                     icon: (
                       <IconHelp className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" />
                     ),
+                    onClick: () => setCurrentView('help'),
                   }
                 }
               />
@@ -322,7 +332,6 @@ export const LogoIcon = () => {
 
 
 // Dummy dashboard component with content
-
 // Define the props type for the Dashboard component
 interface DashboardProps {
   renderContent: () => React.ReactNode; // Specify the type of renderContent
