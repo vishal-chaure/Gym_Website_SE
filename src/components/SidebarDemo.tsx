@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Sidebar, SidebarBody, SidebarLink } from "./ui/sidebar";
 import { Label } from "../components/ui/label";
 import { Input } from "../components/ui/input";
@@ -8,12 +8,14 @@ import {
   IconBrandGoogle,
   IconBrandOnlyfans,
 } from "@tabler/icons-react";
+import { useModal } from "../components/ui/animated-modal";
 import {
   Modal,
   ModalBody,
   ModalContent,
   ModalFooter,
-  ModalTrigger,
+  ModalProvider,
+  ModalTrigger
 } from "../components/ui/animated-modal";
 import {
   IconHeartRateMonitor,
@@ -39,8 +41,13 @@ import DashboardContent from "./DashboardContent";
 import ProfileContent from "./ProfileContent";
 import PaymentContent from "./PaymentContent";
 import FitnessPlansContent from "./FitnessPlansContent";
+import { signIn, signOut, useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { toast } from 'sonner';
+
 
 export function SidebarDemo() {
+
   const links = [
     {
       label: "Dashboard",
@@ -71,9 +78,28 @@ export function SidebarDemo() {
     //   ),
     // },
   ];
+
   const [open, setOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(true);
   const [currentView, setCurrentView] = useState('home');
+  const [error, setError] = useState("");
+  const [loginStatus, setLoginStatus] = useState('signup');
+  // const session = useSession();
+
+  const router = useRouter();
+
+  const { data: session, status: sessionStatus } = useSession();
+
+  useEffect(() => {
+    if (sessionStatus === "authenticated") {
+      console.log("and here we go")
+      // () => toast('This is a sonner toast');
+    }
+
+  }, [sessionStatus, router]);
+
+  const notify = () => toast('Here is your toast.');
+
 
   const link = isLoggedIn
     ? {
@@ -95,10 +121,94 @@ export function SidebarDemo() {
     setIsLoggedIn(!isLoggedIn);
   };
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    console.log("Form submitted");
+  const isValidEmail = (email: string) => {
+    const emailRegex = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i;
+    return emailRegex.test(email);
   };
+
+  const handleSubmit = async (e: any) => {
+
+    e.preventDefault();
+    const username = e.target[0].value;
+    const fullname = e.target[1].value;
+    const email = e.target[2].value;
+    const password = e.target[3].value;
+
+    if (!isValidEmail(email)) {
+      setError("Email is invalid");
+      return;
+    }
+
+    if (!password || password.length < 8) {
+      setError("Password is invalid");
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          username,
+          fullname,
+          email,
+          password,
+        }),
+      });
+      if (res.status === 400) {
+        setError("This email is already registered");
+      }
+      if (res.status === 500) {
+        setError("username is already taken !");
+      }
+      if (res.status === 200) {
+        setError("");
+        // router.push("/trials");
+      }
+    } catch (error) {
+      setError("Error, try again");
+      console.log(error);
+    }
+
+  };
+
+  const handleSubmitLogin = async (e: any) => {
+
+    e.preventDefault();
+    const email = e.target[0].value;
+    const password = e.target[1].value;
+
+    if (!isValidEmail(email)) {
+      setError("Email is invalid");
+      return;
+    }
+
+    if (!password || password.length < 8) {
+      setError("Password is invalid");
+      return;
+    }
+
+    const res = await signIn("credentials", {
+      redirect: false,
+      email,
+      password,
+    });
+    if (res) {
+      console.log("logged in")
+    }
+
+    if (res?.error) {
+      setError("Invalid email or password");
+      if (res?.url) router.replace("/dashboard");
+    } else {
+      setError("");
+    }
+
+  };
+
+
 
   const renderContent = () => {
     switch (currentView) {
@@ -108,7 +218,7 @@ export function SidebarDemo() {
         return <ProfileContent />;
       case 'payment':
         return <PaymentContent />;
-      case 'fitnessPlans':
+      case 'notification':
         return <FitnessPlansContent />;
       case 'home':
         return <HeroSection />;
@@ -134,9 +244,12 @@ export function SidebarDemo() {
                   icon: (
                     <IconBrandTabler className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" />
                   ),
-                  onClick: () => setCurrentView('dashboard'),
+                  onClick: () => {
+                    setCurrentView('dashboard');
+                  },
                 }}
               />
+              
               <SidebarLink
                 link={
                   {
@@ -197,90 +310,136 @@ export function SidebarDemo() {
                   }
                 }
               />
-
+              
               <Modal>
-                <ModalTrigger className="text-neutral-700 dark:text-neutral-200 h-50 w-50 pl-0 mt-0 flex-shrink-0">
-                  <SidebarLink link={link} />
-                </ModalTrigger>
+                {!session ? (
+                  <>
+                    <ModalTrigger className="text-neutral-700 dark:text-neutral-200 h-50 w-50 pl-0 mt-0 flex-shrink-0">
+                      <SidebarLink link={
+                        {
+                          label: 'Login',
+                          href: '#login',
+                          icon: (
+                            <IconArrowRight className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" />
+                          ),
+                        }
+                      } />
+                    </ModalTrigger>
+                  </>
+                ) : (
+                  <div onClick={()=>{
+                    signOut();
+                    toast('This is a sonner toast');
+                  }}>
+                    <SidebarLink link={
+                        {
+                          label: 'Logout',
+                          href: '#logout',
+                          icon: (
+                            <IconArrowLeft className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" />
+                          ),
+                        }
+                      } />
+                  </div>
+                )}
                 <ModalBody>
                   <ModalContent>
-                  <h4 className="text-lg md:text-xl text-neutral-600 dark:text-neutral-100 font-bold text-center mb-8">
-                    Hey, Welcome to{" "}
-                    <span className="px-1 py-0.5 rounded-md bg-gray-100 dark:bg-neutral-800 dark:border-neutral-700 border border-gray-200">
-                     Muscle Buzz Fitness
-                    </span>{" "}
-                    - Let's get started!
-                  </h4>
+                    <h4 className="text-lg md:text-xl text-neutral-600 dark:text-neutral-100 font-bold text-center mb-8">
+                      Hey, Welcome to{" "}
+                      <span className="px-1 py-0.5 rounded-md bg-gray-100 dark:bg-neutral-800 dark:border-neutral-700 border border-gray-200">
+                        Muscle Buzz Fitness
+                      </span>{" "}
+                      - Let's get started!
+                    </h4>
                     <div className="flex justify-center items-center">
-                      
+
                     </div>
                     {/* Form Compo */}
-                    <form className="my-2" onSubmit={handleSubmit}>
-                      <div className="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-2 mb-4">
-                        <LabelInputContainer>
-                          <Label htmlFor="firstname">First name</Label>
-                          <Input id="firstname" placeholder="John" type="text" />
-                        </LabelInputContainer>
-                        <LabelInputContainer>
-                          <Label htmlFor="lastname">Last name</Label>
-                          <Input id="lastname" placeholder="Doe" type="text" />
-                        </LabelInputContainer>
-                      </div>
-                      <LabelInputContainer className="mb-4">
-                        <Label htmlFor="email">Email Address</Label>
-                        <Input id="email" placeholder="example@gmail.com" type="email" />
-                      </LabelInputContainer>
-                      <LabelInputContainer className="mb-4">
-                        <Label htmlFor="password">Password</Label>
-                        <Input id="password" placeholder="••••••••" type="password" />
-                      </LabelInputContainer>
 
-                      <button
-                        className="bg-gradient-to-br relative group/btn from-black dark:from-zinc-900 dark:to-zinc-900 to-neutral-600 block dark:bg-zinc-800 w-full text-white rounded-md h-10 font-medium shadow-[0px_1px_0px_0px_#ffffff40_inset,0px_-1px_0px_0px_#ffffff40_inset] dark:shadow-[0px_1px_0px_0px_var(--zinc-800)_inset,0px_-1px_0px_0px_var(--zinc-800)_inset]"
-                        type="submit"
-                      >
-                        Sign up &rarr;
-                        <BottomGradient />
-                      </button>
+                    {
+                      loginStatus === 'signup'
+                        ?
+                        <form className="my-2" onSubmit={handleSubmit}>
+                          <div className="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-2 mb-4">
+                            <LabelInputContainer>
+                              <Label htmlFor="username">Username</Label>
+                              <Input id="username" placeholder="Johndoe25" type="text" />
+                            </LabelInputContainer>
+                            <LabelInputContainer>
+                              <Label htmlFor="fullname">Your name </Label>
+                              <Input id="fullname" placeholder="John Doe" type="text" />
+                            </LabelInputContainer>
+                          </div>
+                          <LabelInputContainer className="mb-4">
+                            <Label htmlFor="email">Email Address</Label>
+                            <Input id="email" placeholder="example@gmail.com" type="email" />
 
-                      <div className="bg-gradient-to-r from-transparent via-neutral-300 dark:via-neutral-700 to-transparent mt-8 my-5 h-[1px] w-full" />
-                      <p className="text-sm text-neutral-500 dark:text-neutral-400 text-center mb-1">
-                        Already a member ?{" "}
-                        <a href="#" className="text-sky-400 hover:underline">
-                          Log in here
-                        </a>
-                      </p>
-                    </form>
-                    
+                          </LabelInputContainer>
+                          <LabelInputContainer className="mb-4">
+                            <Label htmlFor="password">Password</Label>
+                            <Input id="password" placeholder="••••••••" type="password" />
+                          </LabelInputContainer>
+
+                          <p className="text-red-500 text-center my-2">{error && error}</p>
+                          <button
+                            className="bg-gradient-to-br relative group/btn from-black dark:from-zinc-900 dark:to-zinc-900 to-neutral-600 block dark:bg-zinc-800 w-full text-white rounded-md h-10 font-medium shadow-[0px_1px_0px_0px_#ffffff40_inset,0px_-1px_0px_0px_#ffffff40_inset] dark:shadow-[0px_1px_0px_0px_var(--zinc-800)_inset,0px_-1px_0px_0px_var(--zinc-800)_inset]"
+                            type="submit"
+                          >
+                            Sign up &rarr;
+                            <BottomGradient />
+                          </button>
+
+                          <div className="bg-gradient-to-r from-transparent via-neutral-300 dark:via-neutral-700 to-transparent mt-8 my-5 h-[1px] w-full" />
+                          <p className="text-sm text-neutral-500 dark:text-neutral-400 text-center mb-1">
+                            Already a member ?{" "}
+                            <a href="#" className="text-sky-400 hover:underline" onClick={() => setLoginStatus("login")}>
+                              Log in here
+                            </a>
+                          </p>
+                        </form>
+                        :
+                        <form className="my-2" onSubmit={handleSubmitLogin}>
+                          <LabelInputContainer className="mb-4">
+                            <Label htmlFor="email">Email Address</Label>
+                            <Input id="email" placeholder="example@gmail.com" type="email" />
+
+                          </LabelInputContainer>
+                          <LabelInputContainer className="mb-4">
+                            <Label htmlFor="password">Password</Label>
+                            <Input id="password" placeholder="••••••••" type="password" />
+                          </LabelInputContainer>
+
+                          <p className="text-red-500 text-center my-2">{error && error}</p>
+                          <button
+                            className="bg-gradient-to-br relative group/btn from-black dark:from-zinc-900 dark:to-zinc-900 to-neutral-600 block dark:bg-zinc-800 w-full text-white rounded-md h-10 font-medium shadow-[0px_1px_0px_0px_#ffffff40_inset,0px_-1px_0px_0px_#ffffff40_inset] dark:shadow-[0px_1px_0px_0px_var(--zinc-800)_inset,0px_-1px_0px_0px_var(--zinc-800)_inset]"
+                            type="submit"
+                          >
+                            Sign in &rarr;
+                            <BottomGradient />
+                          </button>
+
+                          <div className="bg-gradient-to-r from-transparent via-neutral-300 dark:via-neutral-700 to-transparent mt-8 my-5 h-[1px] w-full" />
+                          <p className="text-sm text-neutral-500 dark:text-neutral-400 text-center mb-1">
+                            Are You New ?{" "}
+                            <a href="#" className="text-sky-400 hover:underline" onClick={() => setLoginStatus("signup")}>
+                              Sign Up Here
+                            </a>
+                          </p>
+                        </form>
+                    }
                   </ModalContent>
-                  {/* <ModalFooter className="gap-4">
-                    <button className="px-2 py-1 bg-gray-200 text-black dark:bg-black dark:border-black dark:text-white border border-gray-300 rounded-md text-sm w-28">
-                      Cancel
-                    </button>
-                    <button className="bg-black text-white dark:bg-white dark:text-black text-sm px-2 py-1 rounded-md border border-black w-28">
-                      Book Now
-                    </button>
-                  </ModalFooter> */}
                 </ModalBody>
               </Modal>
-
-              {/* this is for temporary button remove it by time  */}
-              <button onClick={handleLoginToggle}>
-                {isLoggedIn ? 'Logout' : 'Login'}
-              </button>
-
-              
-
             </div>
           </div>
           <div>
             <SidebarLink
               link={{
-                label: "member name",
+                label: "Vishal Chaure",
                 href: "#",
                 icon: (
                   <Image
-                    src="https://assets.aceternity.com/manu.png"
+                    src="/me.jpg"
                     className="h-7 w-7 flex-shrink-0 rounded-full"
                     width={50}
                     height={50}
@@ -299,13 +458,13 @@ export function SidebarDemo() {
 interface LogoProps {
   setCurrentView: () => void;
 }
-export const Logo: React.FC<LogoProps> = ({setCurrentView}) => {
+export const Logo: React.FC<LogoProps> = ({ setCurrentView }) => {
   return (
     <div
       onClick={setCurrentView}
       className="font-normal flex space-x-2 items-center text-sm text-black py-1 relative z-20"
     >
-      <IconBarbell size={25} stroke={1.5} color="white" className=" rounded-br-lg rounded-tr-sm rounded-tl-lg rounded-bl-sm flex-shrink-0"/>
+      <IconBarbell size={25} stroke={1.5} color="white" className=" rounded-br-lg rounded-tr-sm rounded-tl-lg rounded-bl-sm flex-shrink-0" />
       {/* <div className="h-5 w-6 bg-black dark:bg-white rounded-br-lg rounded-tr-sm rounded-tl-lg rounded-bl-sm flex-shrink-0" /> */}
       <motion.span
         initial={{ opacity: 0 }}
@@ -337,7 +496,7 @@ interface DashboardProps {
   renderContent: () => React.ReactNode; // Specify the type of renderContent
 }
 
-const Dashboard: React.FC<DashboardProps> = ({renderContent}) => {
+const Dashboard: React.FC<DashboardProps> = ({ renderContent }) => {
   return (
     <div className="flex flex-1">
       <div className="overflow-y-auto scrollbar-hide p-2 md:p-3  rounded-tl-2xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-950 flex flex-col gap-2 flex-1 w-full h-full">

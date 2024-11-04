@@ -1,8 +1,11 @@
 import React from 'react'
+import { CardSpotlightDemo } from './CardSpotlightDemo'
 
 const FitnessPlansContent = () => {
   return (
-    <div>FitnessPlansContent</div>
+    <div>
+     {/* <CardSpotlightDemo/> */}
+    </div>
   )
 }
 
