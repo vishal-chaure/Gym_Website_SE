@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Sidebar, SidebarBody, SidebarLink } from "./ui/sidebar";
 import { Label } from "../components/ui/label";
 import { Input } from "../components/ui/input";
@@ -8,7 +8,7 @@ import {
   IconBrandGoogle,
   IconBrandOnlyfans,
 } from "@tabler/icons-react";
-import { useModal } from "../components/ui/animated-modal";
+import { useModal, useOutsideClick } from "../components/ui/animated-modal";
 import {
   Modal,
   ModalBody,
@@ -44,6 +44,7 @@ import FitnessPlansContent from "./FitnessPlansContent";
 import { signIn, signOut, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { toast } from 'sonner';
+import { useClose } from "@/app/store/useStore";
 
 
 export function SidebarDemo() {
@@ -80,25 +81,42 @@ export function SidebarDemo() {
   ];
 
   const [open, setOpen] = useState(false);
+  const {close, setClose} = useClose();
   const [isLoggedIn, setIsLoggedIn] = useState(true);
   const [currentView, setCurrentView] = useState('home');
   const [error, setError] = useState("");
   const [loginStatus, setLoginStatus] = useState('signup');
   // const session = useSession();
+  const { setOpen: setModalOpen , open: Open} = useModal();
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  const closeModal = useOutsideClick(modalRef, () => setOpen(false));
 
   const router = useRouter();
 
   const { data: session, status: sessionStatus } = useSession();
 
+  const handleSignUp = () => {
+    // Trigger the callback when "Sign Up" button is clicked
+    closeModal();
+  };
+  
+
   useEffect(() => {
+    
     if (sessionStatus === "authenticated") {
       console.log("and here we go")
-      // () => toast('This is a sonner toast');
+      const userId = session.user?.email ;
+      console.log("User ID:", userId);
+      toast('Logged in Successfull');
+      closeModal();
+      setClose(true);
     }
 
   }, [sessionStatus, router]);
 
   const notify = () => toast('Here is your toast.');
+
 
 
   const link = isLoggedIn
@@ -208,7 +226,7 @@ export function SidebarDemo() {
 
   };
 
-
+  
 
   const renderContent = () => {
     switch (currentView) {
@@ -245,7 +263,11 @@ export function SidebarDemo() {
                     <IconBrandTabler className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" />
                   ),
                   onClick: () => {
-                    setCurrentView('dashboard');
+                    if (session) {
+                      setCurrentView('dashboard');
+                    } else {
+                      toast("Login to see Your Dashboard");
+                    }
                   },
                 }}
               />
@@ -274,18 +296,6 @@ export function SidebarDemo() {
                   }
                 }
               />
-              {/* <SidebarLink
-                link={
-                  {
-                    label: "Fitness Plans",
-                    href: "#",
-                    icon: (
-                      <IconClipboardCheck className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" />
-                    ),
-                    onClick: () => setCurrentView('fitnessPlans'),
-                  }
-                }
-              /> */}
               <SidebarLink
                 link={
                   {
@@ -311,7 +321,7 @@ export function SidebarDemo() {
                 }
               />
               
-              <Modal>
+              <Modal >
                 {!session ? (
                   <>
                     <ModalTrigger className="text-neutral-700 dark:text-neutral-200 h-50 w-50 pl-0 mt-0 flex-shrink-0">
@@ -342,7 +352,7 @@ export function SidebarDemo() {
                       } />
                   </div>
                 )}
-                <ModalBody>
+                <ModalBody >
                   <ModalContent>
                     <h4 className="text-lg md:text-xl text-neutral-600 dark:text-neutral-100 font-bold text-center mb-8">
                       Hey, Welcome to{" "}
@@ -353,7 +363,7 @@ export function SidebarDemo() {
                     </h4>
                     <div className="flex justify-center items-center">
 
-                    </div>
+                    </div >
                     {/* Form Compo */}
 
                     {
@@ -366,7 +376,7 @@ export function SidebarDemo() {
                               <Input id="username" placeholder="Johndoe25" type="text" />
                             </LabelInputContainer>
                             <LabelInputContainer>
-                              <Label htmlFor="fullname">Your name </Label>
+                              <Label htmlFor="fullname">Your name</Label>
                               <Input id="fullname" placeholder="John Doe" type="text" />
                             </LabelInputContainer>
                           </div>
@@ -429,7 +439,7 @@ export function SidebarDemo() {
                     }
                   </ModalContent>
                 </ModalBody>
-              </Modal>
+              </Modal >
             </div>
           </div>
           <div>
@@ -665,3 +675,43 @@ const LabelInputContainer = ({
     </div>
   );
 };
+
+const SignUpForm = ({ handleSubmit, error, setLoginStatus }:any) => (
+  <form className="my-2" onSubmit={handleSubmit}>
+      <div className="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-2 mb-4">
+          <LabelInputContainer>
+              <Label htmlFor="username">Username</Label>
+              <Input id="username" placeholder="Johndoe25" type="text" />
+          </LabelInputContainer>
+          <LabelInputContainer>
+              <Label htmlFor="fullname">Your name</Label>
+              <Input id="fullname" placeholder="John Doe" type="text" />
+          </LabelInputContainer>
+      </div>
+      <LabelInputContainer className="mb-4">
+          <Label htmlFor="email">Email Address</Label>
+          <Input id="email" placeholder="example@gmail.com" type="email" />
+      </LabelInputContainer>
+      <LabelInputContainer className="mb-4">
+          <Label htmlFor="password">Password</Label>
+          <Input id="password" placeholder="••••••••" type="password" />
+      </LabelInputContainer>
+      <p className="text-red-500 text-center my-2">{error && error}</p>
+      <button
+          className="bg-gradient-to-br relative group/btn from-black dark:from-zinc-900 dark:to-zinc-900 to-neutral-600 block dark:bg-zinc-800 w-full text-white rounded-md h-10 font-medium shadow-[0px_1px_0px_0px_#ffffff40_inset,0px_-1px_0px_0px_#ffffff40_inset] dark:shadow-[0px_1px_0px_0px_var(--zinc-800)_inset,0px_-1px_0px_0px_var(--zinc-800)_inset]"
+          type="submit"
+      >
+          Sign up &rarr;
+          <BottomGradient />
+      </button>
+      <div className="bg-gradient-to-r from-transparent via-neutral-300 dark:via-neutral-700 to-transparent mt-8 my-5 h-[1px] w-full" />
+      <p className="text-sm text-neutral-500 dark:text-neutral-400 text-center mb-1">
+          Already a member ?{" "}
+          <a href="#" className="text-sky-400 hover:underline" onClick={() => setLoginStatus("login")}>
+              Log in here
+          </a>
+      </p>
+  </form>
+);
+
+export default SignUpForm;

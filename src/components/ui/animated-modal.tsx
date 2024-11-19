@@ -1,4 +1,5 @@
 "use client";
+import { useClose } from "@/app/store/useStore";
 import { cn } from "@/lib/utils";
 import { AnimatePresence, motion } from "framer-motion";
 import React, {
@@ -9,11 +10,14 @@ import React, {
   useRef,
   useState,
 } from "react";
+import { toast } from "sonner";
 
 interface ModalContextType {
   open: boolean;
   setOpen: (open: boolean) => void;
 }
+
+
 
 const ModalContext = createContext<ModalContextType | undefined>(undefined);
 
@@ -39,6 +43,20 @@ export function Modal({ children }: { children: ReactNode }) {
   return <ModalProvider>{children}</ModalProvider>;
 }
 
+// export const ToggleModal = () => {
+//   const { open, setOpen } = useModal();
+//   const {close, setClose} = useClose();
+
+//   return (
+//     <button
+//       onClick={() => setOpen(!close)}
+//       className="px-4 py-2 bg-blue-500 text-white rounded-md"
+//     >
+//       X
+//     </button>
+//   );
+// };
+
 export const ModalTrigger = ({
   children,
   className,
@@ -47,6 +65,13 @@ export const ModalTrigger = ({
   className?: string;
 }) => {
   const { setOpen, open } = useModal();
+  const {close, setClose} = useClose();
+
+  // useEffect(()=>{
+  //   setOpen(false);
+  //   toast("sexy");
+  // },[close]);
+
   return (
     <button
       className={cn(
@@ -240,4 +265,5 @@ export const useOutsideClick = (
       document.removeEventListener("touchstart", listener);
     };
   }, [ref, callback]);
+  return callback;
 };

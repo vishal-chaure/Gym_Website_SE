@@ -3,6 +3,7 @@ import MembershipStatusBar from './MembershipStatusBar'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Payment, columns } from "../app/payments/columns"
 import { DataTable } from '@/app/payments/data-table'
+import SessionBooking from './dashboard/SessionBooking'
 
 const fetchData = async (): Promise<Payment[]> => {
   // Fetch data from your API here.
@@ -124,6 +125,7 @@ const DashboardContent = () => {
           Renew/Upgrade
         </motion.button>
       </motion.section>
+      <SessionBooking/>
 
       <motion.section
         className="bg-neutral-900 rounded-lg p-6 shadow-sm my-3"
@@ -238,6 +240,7 @@ const DashboardContent = () => {
           </motion.div>
         </motion.section>
       </div>
+      
     </div>
   )
 }
