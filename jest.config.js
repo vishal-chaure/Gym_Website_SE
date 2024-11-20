@@ -5,6 +5,6 @@ module.exports = {
        '^.+\\.(js|jsx)$': 'babel-jest', // Transform JavaScript and JSX files
      },
      transformIgnorePatterns: [
-       "/node_modules/(?!your-package-to-transform|another-package-to-transform)/"
+      'node_modules/(?!(your-module-name)/)'
      ], // Optional: If you need to transform files in node_modules
    };
